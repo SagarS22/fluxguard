@@ -1,0 +1,5 @@
+[project]
+name = "fluxguard-ratelimiter"
+version = "0.1.0"
+description = "Distributed rate limiter"
+requires-python = ">=3.10"
