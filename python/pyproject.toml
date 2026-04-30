@@ -1,5 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "fluxguard-ratelimiter"
 version = "0.1.0"
 description = "Distributed rate limiter"
 requires-python = ">=3.10"
+dependencies = [
+  "redis>=5.0.0",
+]
+
+[tool.setuptools]
+packages = ["ratelimiter"]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0.0",
+]
