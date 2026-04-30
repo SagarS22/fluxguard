@@ -80,8 +80,11 @@ class RateLimiter:
             raw = self._redis.evalsha(sha, 1, redis_key, *args)
         except Exception as exc:
             if "NOSCRIPT" in str(exc):
-                self._script_sha = self._redis.script_load(self._script)
-                raw = self._redis.evalsha(self._script_sha, 1, redis_key, *args)
+                try:
+                    self._script_sha = self._redis.script_load(self._script)
+                    raw = self._redis.evalsha(self._script_sha, 1, redis_key, *args)
+                except Exception as reload_exc:
+                    raise ScriptExecutionError(f"redis script reload/execution failed: {reload_exc}") from reload_exc
             else:
                 raise ScriptExecutionError(f"redis script execution failed: {exc}") from exc
 
