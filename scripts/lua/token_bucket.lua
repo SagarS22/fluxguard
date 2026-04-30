@@ -44,15 +44,6 @@ local now_sec  = tonumber(time_result[1])
 local now_usec = tonumber(time_result[2])
 local now_ms   = now_sec * 1000 + math.floor(now_usec / 1000)
 
--- ── Peek shortcut (requested == 0) ─────────────────────────────────────────
--- Read current token count without mutating state.
-
-if requested == 0 then
-    local peek = redis.call('HGET', key, 'tokens')
-    local cur  = tonumber(peek) or capacity
-    return {1, math.floor(cur), 0, now_ms}
-end
-
 -- ── Load existing state ─────────────────────────────────────────────────────
 
 local state    = redis.call('HMGET', key, 'tokens', 'last_refill_sec', 'last_refill_usec')
@@ -79,6 +70,27 @@ else
     end
     last_sec  = now_sec
     last_usec = now_usec
+end
+
+-- ── Peek (requested == 0) ──────────────────────────────────────────────────
+-- Return current effective tokens at `now` without mutating state.
+
+if requested == 0 then
+    local remaining = math.floor(tokens)
+    local reset_at_ms = now_ms
+
+    if no_refill then
+        if tokens < capacity then
+            reset_at_ms = 2147483647
+        end
+    else
+        if tokens < capacity then
+            local deficit = capacity - tokens
+            reset_at_ms = now_ms + math.ceil(deficit / refill_rate * 1000)
+        end
+    end
+
+    return {1, remaining, 0, math.floor(reset_at_ms)}
 end
 
 -- ── Decision ────────────────────────────────────────────────────────────────
