@@ -101,7 +101,7 @@ if tokens >= requested then
     end
 else
     -- Denied: tokens is not mutated so the state is unchanged.
-    remaining = 0
+    remaining = math.floor(tokens)
     if no_refill then
         retry_after_ms = 2147483647
         reset_at_ms    = 2147483647
