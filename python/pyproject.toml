@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["ratelimiter"]
+packages = ["ratelimiter", "ratelimiter.algorithms"]
 
 [project.optional-dependencies]
 test = [
