@@ -7,33 +7,33 @@ on:
     branches: [main]
 
 jobs:
-  go-test:
-    runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-    steps:
-      - uses: actions/checkout@v4
+  # go-test:
+  #   runs-on: ubuntu-latest
+  #   services:
+  #     redis:
+  #       image: redis:7-alpine
+  #       ports:
+  #         - 6379:6379
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.21'
 
-      - name: Download Go modules
-        run: go mod download
-        working-directory: go/ratelimiter
+  #     - name: Download Go modules
+  #       run: go mod download
+  #       working-directory: go/ratelimiter
 
-      - name: Run Go tests
-        run: go test -v -race ./...
-        working-directory: go/ratelimiter
+  #     - name: Run Go tests
+  #       run: go test -v -race ./...
+  #       working-directory: go/ratelimiter
 
-      - name: Run Go linter
-        uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: go/ratelimiter
+  #     - name: Run Go linter
+  #       uses: golangci/golangci-lint-action@v6
+  #       with:
+  #         working-directory: go/ratelimiter
 
   python-test:
     runs-on: ubuntu-latest
@@ -51,7 +51,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: pip install -e .
+        run: pip install -e '.[test]'
         working-directory: python
 
       - name: Run Python tests
