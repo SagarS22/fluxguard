@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from .algorithms.base import BasePolicy, RateLimitAlgorithm
-from .algorithms.token_bucket import TokenBucketAlgorithm, TokenBucketPolicy
+from .algorithms.token_bucket import TokenBucketAlgorithm
 from .models import Decision
 from .script_executor import RedisScriptExecutor
 
@@ -38,6 +38,3 @@ class RateLimiter:
         raw = self._executor.execute(redis_key=redis_key, args=args)
         return self._algorithm.parse_decision(raw)
 
-
-# Backward compatibility alias
-Policy = TokenBucketPolicy

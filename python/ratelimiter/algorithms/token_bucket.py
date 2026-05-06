@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ..models import Decision, ScriptExecutionError
-from .base import BasePolicy
+from .base import BasePolicy, RateLimitAlgorithm
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class TokenBucketPolicy(BasePolicy):
             raise ValueError("ttl_sec must be > 0")
 
 
-class TokenBucketAlgorithm:
+class TokenBucketAlgorithm(RateLimitAlgorithm):
     name = "token_bucket"
     key_prefix = "ratelimit:token_bucket"
 
