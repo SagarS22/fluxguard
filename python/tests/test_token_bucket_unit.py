@@ -1,10 +1,10 @@
 from pathlib import Path
 
 from ratelimiter import (
-    Policy,
     RateLimiter,
     ScriptExecutionError,
     TokenBucketAlgorithm,
+    TokenBucketPolicy,
     create_rate_limiter,
     registry,
 )
@@ -31,13 +31,13 @@ class FakeRedis:
 
 
 def test_policy_validation():
-    p = Policy(capacity=1, refill_rate=1.0, ttl_sec=1)
+    p = TokenBucketPolicy(capacity=1, refill_rate=1.0, ttl_sec=1)
     p.validate()
 
 
 def test_check_maps_response():
     rl = RateLimiter(FakeRedis())
-    d = rl.check(key="user:1", policy=Policy(capacity=5, refill_rate=1.0, ttl_sec=30), requested=1)
+    d = rl.check(key="user:1", policy=TokenBucketPolicy(capacity=5, refill_rate=1.0, ttl_sec=30), requested=1)
     assert d.allowed is True
     assert d.remaining == 4
 
@@ -45,7 +45,7 @@ def test_check_maps_response():
 def test_check_noscript_reloads():
     redis = FakeRedis(fail_once_noscript=True)
     rl = RateLimiter(redis)
-    d = rl.check(key="user:1", policy=Policy(capacity=5, refill_rate=1.0, ttl_sec=30), requested=1)
+    d = rl.check(key="user:1", policy=TokenBucketPolicy(capacity=5, refill_rate=1.0, ttl_sec=30), requested=1)
     assert d.allowed is True
     assert redis.loaded >= 2
 
@@ -53,7 +53,7 @@ def test_check_noscript_reloads():
 def test_check_raises_on_non_noscript_error():
     rl = RateLimiter(FakeRedis(fail_error="connection lost"))
     try:
-        rl.check(key="user:1", policy=Policy(capacity=5, refill_rate=1.0, ttl_sec=30), requested=1)
+        rl.check(key="user:1", policy=TokenBucketPolicy(capacity=5, refill_rate=1.0, ttl_sec=30), requested=1)
         assert False, "expected ScriptExecutionError"
     except ScriptExecutionError:
         assert True
@@ -63,7 +63,7 @@ def test_factory_by_name_and_instance():
     redis = FakeRedis()
     rl1 = create_rate_limiter(redis, algorithm="token_bucket")
     rl2 = create_rate_limiter(redis, algorithm=TokenBucketAlgorithm())
-    policy = Policy(capacity=1, refill_rate=1.0, ttl_sec=1)
+    policy = TokenBucketPolicy(capacity=1, refill_rate=1.0, ttl_sec=1)
     assert rl1.check(key="k1", policy=policy).allowed
     assert rl2.check(key="k2", policy=policy).allowed
 
@@ -81,9 +81,9 @@ def test_default_script_path_exists():
     assert Path(path).exists()
 
 
-def test_policy_alias_backward_compatibility():
-    p = Policy(capacity=2, refill_rate=1.0, ttl_sec=10)
-    assert p.capacity == 2
+def test_rate_limiter_exposes_policy_type():
+    rl = RateLimiter(FakeRedis())
+    assert rl.policy_type is TokenBucketPolicy
 
 
 def test_registry_registration_lifecycle():
@@ -92,5 +92,5 @@ def test_registry_registration_lifecycle():
 
     registry.register("custom", CustomAlgo)
     rl = create_rate_limiter(FakeRedis(), algorithm="custom")
-    assert rl.check(key="x", policy=Policy(capacity=1, refill_rate=1.0, ttl_sec=1)).allowed
+    assert rl.check(key="x", policy=TokenBucketPolicy(capacity=1, refill_rate=1.0, ttl_sec=1)).allowed
     registry.unregister("custom")

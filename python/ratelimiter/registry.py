@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from .algorithms.base import RateLimitAlgorithm
 from .algorithms.token_bucket import TokenBucketAlgorithm
+from .algorithms.sliding_window import SlidingWindowAlgorithm
 
 AlgorithmFactory = Callable[[], RateLimitAlgorithm]
 
@@ -12,6 +13,7 @@ class AlgorithmRegistry:
     def __init__(self) -> None:
         self._factories: dict[str, AlgorithmFactory] = {
             "token_bucket": TokenBucketAlgorithm,
+            "sliding_window": SlidingWindowAlgorithm
         }
 
     def register(self, name: str, factory: AlgorithmFactory) -> None:

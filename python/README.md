@@ -12,14 +12,15 @@ pip install -e .
 
 ```python
 import redis
-from ratelimiter import RateLimiter, Policy
+from ratelimiter import RateLimiter, TokenBucketPolicy
 
 r = redis.Redis.from_url("redis://localhost:6379/0")
 rl = RateLimiter(r)
 
 decision = rl.check(
     key="user:123",
-    policy=Policy(capacity=10, refill_rate=5.0, ttl_sec=60),
+    dimension="user",
+    policy=TokenBucketPolicy(capacity=10, refill_rate=5.0, ttl_sec=60),
     requested=1,
 )
 
@@ -29,9 +30,28 @@ print(decision.allowed, decision.remaining, decision.retry_after_ms, decision.re
 ## Usage (factory)
 
 ```python
-from ratelimiter import create_rate_limiter
+from ratelimiter import SlidingWindowPolicy, TokenBucketPolicy, create_rate_limiter
 
 rl = create_rate_limiter(r, algorithm="token_bucket")
+token_bucket_policy = TokenBucketPolicy(capacity=10, refill_rate=5.0, ttl_sec=60)
+
+sliding = create_rate_limiter(r, algorithm="sliding_window")
+sliding_window_policy = SlidingWindowPolicy(capacity=100, window_sec=60, ttl_sec=60)
+```
+
+Policy durations use explicit units in their field names: `window_sec` and `ttl_sec` are seconds.
+Decision timing fields ending in `_ms` are milliseconds.
+
+Redis keys are built by the SDK as `{prefix}:{algorithm}:{dimension}:{key}`. The user-provided
+`key` component is URL-safe base64 encoded so values like `user:123` cannot collide with the
+colon-delimited key hierarchy, and generated Redis keys are capped at 512 bytes. Multi-key
+algorithms, such as sliding window, wrap the encoded key in a Redis Cluster hash tag so all keys
+used by one Lua script hash to the same slot.
+
+If you need to choose the policy dynamically, inspect the limiter:
+
+```python
+policy_cls = rl.policy_type
 ```
 
 ## Extending with custom algorithm
