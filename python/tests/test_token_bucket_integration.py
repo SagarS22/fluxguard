@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from ratelimiter import Policy, RateLimiter
+from ratelimiter import RateLimiter, TokenBucketPolicy
 
 
 redis = pytest.importorskip("redis")
@@ -23,7 +23,7 @@ def redis_client():
 def test_allow_then_deny_then_refill(redis_client):
     key = f"it:user:{time.time_ns()}"
     rl = RateLimiter(redis_client)
-    policy = Policy(capacity=2, refill_rate=2.0, ttl_sec=30)
+    policy = TokenBucketPolicy(capacity=2, refill_rate=2.0, ttl_sec=30)
 
     first = rl.check(key=key, policy=policy, requested=1)
     second = rl.check(key=key, policy=policy, requested=1)
@@ -42,7 +42,7 @@ def test_allow_then_deny_then_refill(redis_client):
 def test_peek_reflects_refill_without_consuming(redis_client):
     key = f"it:peek:{time.time_ns()}"
     rl = RateLimiter(redis_client)
-    policy = Policy(capacity=2, refill_rate=2.0, ttl_sec=30)
+    policy = TokenBucketPolicy(capacity=2, refill_rate=2.0, ttl_sec=30)
 
     # Drain bucket.
     rl.check(key=key, policy=policy, requested=1)

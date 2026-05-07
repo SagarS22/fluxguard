@@ -12,14 +12,14 @@ pip install -e .
 
 ```python
 import redis
-from ratelimiter import RateLimiter, Policy
+from ratelimiter import RateLimiter, TokenBucketPolicy
 
 r = redis.Redis.from_url("redis://localhost:6379/0")
 rl = RateLimiter(r)
 
 decision = rl.check(
     key="user:123",
-    policy=Policy(capacity=10, refill_rate=5.0, ttl_sec=60),
+    policy=TokenBucketPolicy(capacity=10, refill_rate=5.0, ttl_sec=60),
     requested=1,
 )
 
@@ -29,9 +29,19 @@ print(decision.allowed, decision.remaining, decision.retry_after_ms, decision.re
 ## Usage (factory)
 
 ```python
-from ratelimiter import create_rate_limiter
+from ratelimiter import SlidingWindowPolicy, TokenBucketPolicy, create_rate_limiter
 
 rl = create_rate_limiter(r, algorithm="token_bucket")
+token_bucket_policy = TokenBucketPolicy(capacity=10, refill_rate=5.0, ttl_sec=60)
+
+sliding = create_rate_limiter(r, algorithm="sliding_window")
+sliding_window_policy = SlidingWindowPolicy(capacity=100, window_size=60, ttl_sec=60)
+```
+
+If you need to choose the policy dynamically, inspect the limiter:
+
+```python
+policy_cls = rl.policy_type
 ```
 
 ## Extending with custom algorithm

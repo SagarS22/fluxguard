@@ -17,6 +17,7 @@ class RateLimitAlgorithm(Protocol):
 
     name: str
     key_prefix: str
+    policy_type: type[BasePolicy]
 
     def default_script_path(self) -> Path:
         ...

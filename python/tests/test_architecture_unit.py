@@ -1,4 +1,4 @@
-from ratelimiter import Policy, RateLimiter
+from ratelimiter import RateLimiter, TokenBucketPolicy
 from ratelimiter.algorithms.base import BasePolicy
 from ratelimiter.models import Decision
 
@@ -14,6 +14,7 @@ class FakeRedis:
 class FakeAlgorithm:
     name = "fake"
     key_prefix = "ratelimit:fake"
+    policy_type = TokenBucketPolicy
 
     def __init__(self):
         self.validated = False
@@ -40,7 +41,7 @@ class FakeAlgorithm:
 def test_ratelimiter_uses_algorithm_inversion_of_control():
     algo = FakeAlgorithm()
     rl = RateLimiter(FakeRedis(), algorithm=algo)
-    d = rl.check(key="user:1", policy=Policy(capacity=1, refill_rate=1.0, ttl_sec=30), requested=1)
+    d = rl.check(key="user:1", policy=TokenBucketPolicy(capacity=1, refill_rate=1.0, ttl_sec=30), requested=1)
     assert d.allowed is True
     assert algo.validated is True
     assert algo.args_built is True

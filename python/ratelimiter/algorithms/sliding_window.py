@@ -24,6 +24,7 @@ class SlidingWindowPolicy(BasePolicy):
 class SlidingWindowAlgorithm(RateLimitAlgorithm):
     name = "sliding_window"
     key_prefix = "ratelimit:sliding_window"
+    policy_type = SlidingWindowPolicy
 
     def default_script_path(self) -> Path:
         return Path(__file__).resolve().parents[3] / "scripts" / "lua" / "sliding_window.lua"

@@ -26,6 +26,7 @@ class TokenBucketPolicy(BasePolicy):
 class TokenBucketAlgorithm(RateLimitAlgorithm):
     name = "token_bucket"
     key_prefix = "ratelimit:token_bucket"
+    policy_type = TokenBucketPolicy
 
     def default_script_path(self) -> Path:
         return Path(__file__).resolve().parents[3] / "scripts" / "lua" / "token_bucket.lua"

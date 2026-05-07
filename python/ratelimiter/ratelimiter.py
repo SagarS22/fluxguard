@@ -25,6 +25,10 @@ class RateLimiter:
             script_path=script_path or self._algorithm.default_script_path(),
         )
 
+    @property
+    def policy_type(self) -> type[BasePolicy]:
+        return self._algorithm.policy_type
+
     def check(self, *, key: str, policy: BasePolicy, requested: int = 1) -> Decision:
         if not key:
             raise ValueError("key must be non-empty")
