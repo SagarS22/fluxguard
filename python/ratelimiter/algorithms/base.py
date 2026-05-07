@@ -16,8 +16,8 @@ class RateLimitAlgorithm(Protocol):
     """Algorithm contract used by RateLimiter orchestration."""
 
     name: str
-    key_prefix: str
     policy_type: type[BasePolicy]
+    use_redis_hash_tag: bool
 
     def default_script_path(self) -> Path:
         ...
@@ -28,8 +28,8 @@ class RateLimitAlgorithm(Protocol):
     def build_redis_args(self, policy: BasePolicy, requested: int) -> list[Any]:
         ...
 
-    def build_redis_keys(self, prefix: str | None, key: str) -> list[str]:
+    def build_redis_keys(self, base_key: str) -> list[str]:
         ...
-    
+
     def parse_decision(self, raw: Any) -> Decision:
         ...

@@ -13,8 +13,8 @@ class FakeRedis:
 
 class FakeAlgorithm:
     name = "fake"
-    key_prefix = "ratelimit:fake"
     policy_type = TokenBucketPolicy
+    use_redis_hash_tag = False
 
     def __init__(self):
         self.validated = False
@@ -34,9 +34,9 @@ class FakeAlgorithm:
         self.args_built = True
         return [1, 1.0, requested, 30]
 
-    def build_redis_keys(self, prefix: str | None, key: str):
+    def build_redis_keys(self, base_key: str):
         self.keys_built = True
-        return [f"{prefix}:{key}"]
+        return [base_key]
 
     def parse_decision(self, raw):
         self.parsed = True

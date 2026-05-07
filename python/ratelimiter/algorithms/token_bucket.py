@@ -25,8 +25,8 @@ class TokenBucketPolicy(BasePolicy):
 
 class TokenBucketAlgorithm(RateLimitAlgorithm):
     name = "token_bucket"
-    key_prefix = "ratelimit:token_bucket"
     policy_type = TokenBucketPolicy
+    use_redis_hash_tag = False
 
     def default_script_path(self) -> Path:
         return Path(__file__).resolve().parents[3] / "scripts" / "lua" / "token_bucket.lua"
@@ -40,12 +40,8 @@ class TokenBucketAlgorithm(RateLimitAlgorithm):
         assert isinstance(policy, TokenBucketPolicy)
         return [policy.capacity, policy.refill_rate, requested, policy.ttl_sec]
     
-    def build_redis_keys(self, prefix, key):
-        prefix = prefix or self.key_prefix
-
-        keys = [f"{prefix}:{key}"]
-
-        return keys
+    def build_redis_keys(self, base_key: str) -> list[str]:
+        return [base_key]
 
     def parse_decision(self, raw: Any) -> Decision:
         if not isinstance(raw, (list, tuple)) or len(raw) != 4:

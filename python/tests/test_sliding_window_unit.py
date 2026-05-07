@@ -37,8 +37,8 @@ def test_sliding_window_passes_two_redis_keys_and_converts_window_sec_to_ms():
             "sha-1",
             2,
             (
-                "ratelimit:sliding_window:user:1",
-                "ratelimit:sliding_window:user:1:seq",
+                "ratelimit:sliding_window:key:{dXNlcjox}",
+                "ratelimit:sliding_window:key:{dXNlcjox}:seq",
                 3,
                 60_000,
                 1,
@@ -59,8 +59,8 @@ def test_sliding_window_noscript_retry_keeps_two_key_count():
     assert redis.loaded == 2
     assert [call[1] for call in redis.calls] == [2, 2]
     assert redis.calls[1][2] == (
-        "ratelimit:sliding_window:user:1",
-        "ratelimit:sliding_window:user:1:seq",
+        "ratelimit:sliding_window:key:{dXNlcjox}",
+        "ratelimit:sliding_window:key:{dXNlcjox}:seq",
         3,
         1_000,
         2,

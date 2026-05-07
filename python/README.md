@@ -19,6 +19,7 @@ rl = RateLimiter(r)
 
 decision = rl.check(
     key="user:123",
+    dimension="user",
     policy=TokenBucketPolicy(capacity=10, refill_rate=5.0, ttl_sec=60),
     requested=1,
 )
@@ -40,6 +41,12 @@ sliding_window_policy = SlidingWindowPolicy(capacity=100, window_sec=60, ttl_sec
 
 Policy durations use explicit units in their field names: `window_sec` and `ttl_sec` are seconds.
 Decision timing fields ending in `_ms` are milliseconds.
+
+Redis keys are built by the SDK as `{prefix}:{algorithm}:{dimension}:{key}`. The user-provided
+`key` component is URL-safe base64 encoded so values like `user:123` cannot collide with the
+colon-delimited key hierarchy, and generated Redis keys are capped at 512 bytes. Multi-key
+algorithms, such as sliding window, wrap the encoded key in a Redis Cluster hash tag so all keys
+used by one Lua script hash to the same slot.
 
 If you need to choose the policy dynamically, inspect the limiter:
 

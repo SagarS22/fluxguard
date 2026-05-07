@@ -24,8 +24,8 @@ class SlidingWindowPolicy(BasePolicy):
 
 class SlidingWindowAlgorithm(RateLimitAlgorithm):
     name = "sliding_window"
-    key_prefix = "ratelimit:sliding_window"
     policy_type = SlidingWindowPolicy
+    use_redis_hash_tag = True
 
     def default_script_path(self) -> Path:
         return Path(__file__).resolve().parents[3] / "scripts" / "lua" / "sliding_window.lua"
@@ -40,12 +40,8 @@ class SlidingWindowAlgorithm(RateLimitAlgorithm):
         window_ms = math.ceil(policy.window_sec * 1000)
         return [policy.capacity, window_ms, requested, policy.ttl_sec]
 
-    def build_redis_keys(self, prefix, key):
-        prefix = prefix or self.key_prefix
-
-        keys = [f"{prefix}:{key}", f"{prefix}:{key}:seq"]
-
-        return keys
+    def build_redis_keys(self, base_key: str) -> list[str]:
+        return [base_key, f"{base_key}:seq"]
 
     def parse_decision(self, raw: Any) -> Decision:
         if not isinstance(raw, (list, tuple)) or len(raw) != 4:
