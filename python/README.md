@@ -35,8 +35,11 @@ rl = create_rate_limiter(r, algorithm="token_bucket")
 token_bucket_policy = TokenBucketPolicy(capacity=10, refill_rate=5.0, ttl_sec=60)
 
 sliding = create_rate_limiter(r, algorithm="sliding_window")
-sliding_window_policy = SlidingWindowPolicy(capacity=100, window_size=60, ttl_sec=60)
+sliding_window_policy = SlidingWindowPolicy(capacity=100, window_sec=60, ttl_sec=60)
 ```
+
+Policy durations use explicit units in their field names: `window_sec` and `ttl_sec` are seconds.
+Decision timing fields ending in `_ms` are milliseconds.
 
 If you need to choose the policy dynamically, inspect the limiter:
 

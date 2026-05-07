@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from ratelimiter import RateLimiter, SlidingWindowAlgorithm, SlidingWindowPolicy, create_rate_limiter
 
 
@@ -22,10 +24,10 @@ class FakeRedis:
         return self.response
 
 
-def test_sliding_window_passes_two_redis_keys_and_args():
+def test_sliding_window_passes_two_redis_keys_and_converts_window_sec_to_ms():
     redis = FakeRedis()
     rl = create_rate_limiter(redis, algorithm="sliding_window")
-    policy = SlidingWindowPolicy(capacity=3, window_size=1_000, ttl_sec=30)
+    policy = SlidingWindowPolicy(capacity=3, window_sec=60, ttl_sec=30)
 
     decision = rl.check(key="user:1", policy=policy, requested=1)
 
@@ -38,7 +40,7 @@ def test_sliding_window_passes_two_redis_keys_and_args():
                 "ratelimit:sliding_window:user:1",
                 "ratelimit:sliding_window:user:1:seq",
                 3,
-                1_000,
+                60_000,
                 1,
                 30,
             ),
@@ -49,7 +51,7 @@ def test_sliding_window_passes_two_redis_keys_and_args():
 def test_sliding_window_noscript_retry_keeps_two_key_count():
     redis = FakeRedis(fail_once_noscript=True)
     rl = RateLimiter(redis, algorithm=SlidingWindowAlgorithm())
-    policy = SlidingWindowPolicy(capacity=3, window_size=1_000, ttl_sec=30)
+    policy = SlidingWindowPolicy(capacity=3, window_sec=1, ttl_sec=30)
 
     decision = rl.check(key="user:1", policy=policy, requested=2)
 
@@ -64,6 +66,27 @@ def test_sliding_window_noscript_retry_keeps_two_key_count():
         2,
         30,
     )
+
+
+def test_sliding_window_accepts_subsecond_windows_as_milliseconds():
+    redis = FakeRedis()
+    rl = RateLimiter(redis, algorithm=SlidingWindowAlgorithm())
+    policy = SlidingWindowPolicy(capacity=3, window_sec=0.25, ttl_sec=30)
+
+    rl.check(key="user:1", policy=policy)
+
+    assert redis.calls[0][2][3] == 250
+
+
+def test_sliding_window_rejects_zero_window_before_lua_execution():
+    redis = FakeRedis()
+    rl = RateLimiter(redis, algorithm=SlidingWindowAlgorithm())
+    policy = SlidingWindowPolicy(capacity=3, window_sec=0, ttl_sec=30)
+
+    with pytest.raises(ValueError, match="window_sec must be > 0"):
+        rl.check(key="user:1", policy=policy)
+
+    assert redis.calls == []
 
 
 def test_sliding_window_default_script_path_exists():

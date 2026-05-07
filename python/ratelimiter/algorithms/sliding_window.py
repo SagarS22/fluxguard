@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -9,14 +10,14 @@ from .base import BasePolicy, RateLimitAlgorithm
 @dataclass(frozen=True)
 class SlidingWindowPolicy(BasePolicy):
     capacity: int
-    window_size: int
+    window_sec: float
     ttl_sec: int
 
     def validate(self) -> None:
         if self.capacity <= 0:
             raise ValueError("capacity must be > 0")
-        if self.window_size < 0:
-            raise ValueError("window size must be >= 0")
+        if self.window_sec <= 0 or not math.isfinite(self.window_sec):
+            raise ValueError("window_sec must be > 0")
         if self.ttl_sec <= 0:
             raise ValueError("ttl_sec must be > 0")
 
@@ -36,7 +37,8 @@ class SlidingWindowAlgorithm(RateLimitAlgorithm):
 
     def build_redis_args(self, policy: BasePolicy, requested: int) -> list[Any]:
         assert isinstance(policy, SlidingWindowPolicy)
-        return [policy.capacity, policy.window_size, requested, policy.ttl_sec]
+        window_ms = math.ceil(policy.window_sec * 1000)
+        return [policy.capacity, window_ms, requested, policy.ttl_sec]
 
     def build_redis_keys(self, prefix, key):
         prefix = prefix or self.key_prefix
