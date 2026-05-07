@@ -2,7 +2,7 @@
 -- Atomic token bucket rate limiter for Redis
 -- Load with SCRIPT LOAD and invoke via EVALSHA for script caching.
 --
--- KEYS[1] = state key (e.g. ratelimit:token_bucket:user:123)
+-- KEYS[1] = state key (e.g. ratelimit:token_bucket:user:dXNlcjoxMjM)
 -- ARGV[1] = capacity     (int,   max tokens)
 -- ARGV[2] = refill_rate  (float, tokens per second; 0 = no refill)
 -- ARGV[3] = requested    (int,   tokens to consume; 0 = peek without consuming)

@@ -5,8 +5,8 @@
 --
 -- IMPORTANT (Redis Cluster): this script uses two keys. In cluster mode both keys
 -- must hash to the same slot. Use a shared hash tag, for example:
---   KEYS[1] = ratelimit:{user:123}:sliding_window
---   KEYS[2] = ratelimit:{user:123}:sliding_window:seq
+--   KEYS[1] = ratelimit:sliding_window:user:{dXNlcjoxMjM}
+--   KEYS[2] = ratelimit:sliding_window:user:{dXNlcjoxMjM}:seq
 --
 -- KEYS[1] = request log ZSET key
 -- KEYS[2] = sequence key for unique member generation
