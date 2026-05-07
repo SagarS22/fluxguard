@@ -37,8 +37,8 @@ class RateLimiter:
 
         self._algorithm.validate_policy(policy)
 
-        redis_key = f"{self._key_prefix}:{key}"
+        redis_keys = self._algorithm.build_redis_keys(prefix=self._key_prefix, key=key)
         args = self._algorithm.build_redis_args(policy, requested)
-        raw = self._executor.execute(redis_key=redis_key, args=args)
+        raw = self._executor.execute(redis_keys=redis_keys, args=args)
         return self._algorithm.parse_decision(raw)
 

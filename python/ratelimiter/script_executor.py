@@ -30,15 +30,15 @@ class RedisScriptExecutor:
             self._script_sha = self._redis.script_load(self._script)
         return self._script_sha
 
-    def execute(self, *, redis_key: str, args: list[Any]) -> Any:
+    def execute(self, *, redis_keys: list[str], args: list[Any]) -> Any:
         sha = self._ensure_script_loaded()
         try:
-            return self._redis.evalsha(sha, 1, redis_key, *args)
+            return self._redis.evalsha(sha, len(redis_keys), *redis_keys, *args)
         except Exception as exc:
             if "NOSCRIPT" in str(exc):
                 try:
                     self._script_sha = self._redis.script_load(self._script)
-                    return self._redis.evalsha(self._script_sha, 1, redis_key, *args)
+                    return self._redis.evalsha(self._script_sha, len(redis_keys), *redis_keys, *args)
                 except Exception as reload_exc:
                     raise ScriptExecutionError(f"redis script reload/execution failed: {reload_exc}") from reload_exc
             raise ScriptExecutionError(f"redis script execution failed: {exc}") from exc

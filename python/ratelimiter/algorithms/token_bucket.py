@@ -39,6 +39,13 @@ class TokenBucketAlgorithm(RateLimitAlgorithm):
     def build_redis_args(self, policy: BasePolicy, requested: int) -> list[Any]:
         assert isinstance(policy, TokenBucketPolicy)
         return [policy.capacity, policy.refill_rate, requested, policy.ttl_sec]
+    
+    def build_redis_keys(self, prefix, key):
+        prefix = prefix or self.key_prefix
+
+        keys = [f"{prefix}:{key}"]
+
+        return keys
 
     def parse_decision(self, raw: Any) -> Decision:
         if not isinstance(raw, (list, tuple)) or len(raw) != 4:

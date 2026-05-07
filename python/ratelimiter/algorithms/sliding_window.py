@@ -38,6 +38,13 @@ class SlidingWindowAlgorithm(RateLimitAlgorithm):
         assert isinstance(policy, SlidingWindowPolicy)
         return [policy.capacity, policy.window_size, requested, policy.ttl_sec]
 
+    def build_redis_keys(self, prefix, key):
+        prefix = prefix or self.key_prefix
+
+        keys = [f"{prefix}:{key}", f"{prefix}:{key}:seq"]
+
+        return keys
+
     def parse_decision(self, raw: Any) -> Decision:
         if not isinstance(raw, (list, tuple)) or len(raw) != 4:
             raise ScriptExecutionError(f"unexpected script response: {raw!r}")

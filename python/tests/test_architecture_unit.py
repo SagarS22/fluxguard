@@ -7,7 +7,7 @@ class FakeRedis:
     def script_load(self, script):
         return "sha"
 
-    def evalsha(self, sha, numkeys, key, *args):
+    def evalsha(self, sha, numkeys, *keys_and_args):
         return [1, 9, 0, 111]
 
 
@@ -19,6 +19,7 @@ class FakeAlgorithm:
     def __init__(self):
         self.validated = False
         self.args_built = False
+        self.keys_built = False
         self.parsed = False
 
     def default_script_path(self):
@@ -33,6 +34,10 @@ class FakeAlgorithm:
         self.args_built = True
         return [1, 1.0, requested, 30]
 
+    def build_redis_keys(self, prefix: str | None, key: str):
+        self.keys_built = True
+        return [f"{prefix}:{key}"]
+
     def parse_decision(self, raw):
         self.parsed = True
         return Decision(True, 9, 0, 111)
@@ -45,4 +50,5 @@ def test_ratelimiter_uses_algorithm_inversion_of_control():
     assert d.allowed is True
     assert algo.validated is True
     assert algo.args_built is True
+    assert algo.keys_built is True
     assert algo.parsed is True
