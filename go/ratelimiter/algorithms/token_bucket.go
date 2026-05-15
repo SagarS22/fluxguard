@@ -36,6 +36,10 @@ func (TokenBucketAlgorithm) Name() string { return "token_bucket" }
 
 func (TokenBucketAlgorithm) KeyPrefix() string { return "ratelimit:token_bucket" }
 
+func (TokenBucketAlgorithm) BuildRedisKeys(baseKey string) []string { return []string{baseKey} }
+
+func (TokenBucketAlgorithm) UseRedisHashTag() bool { return false }
+
 func (TokenBucketAlgorithm) DefaultScriptPath() string {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {

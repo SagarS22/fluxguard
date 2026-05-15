@@ -15,5 +15,7 @@ type Algorithm interface {
 	DefaultScriptPath() string
 	ValidatePolicy(policy any) error
 	BuildRedisArgs(policy any, requested int64) ([]any, error)
+	BuildRedisKeys(baseKey string) []string
+	UseRedisHashTag() bool
 	ParseDecision(raw any) (Decision, error)
 }
