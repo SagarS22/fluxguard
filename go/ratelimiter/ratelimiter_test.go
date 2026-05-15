@@ -37,7 +37,7 @@ func TestRateLimiterCheck(t *testing.T) {
 	if !decision.Allowed || decision.Remaining != 4 {
 		t.Fatalf("decision = %#v", decision)
 	}
-	if got, want := redis.keys[0], "test:user:1"; got != want {
+	if got, want := redis.keys[0], "test:token_bucket:key:dXNlcjox"; got != want {
 		t.Fatalf("key = %q, want %q", got, want)
 	}
 	wantArgs := []any{int64(5), float64(1), int64(1), int64(60)}
@@ -45,6 +45,36 @@ func TestRateLimiterCheck(t *testing.T) {
 		if redis.args[i] != wantArgs[i] {
 			t.Fatalf("arg[%d] = %#v, want %#v", i, redis.args[i], wantArgs[i])
 		}
+	}
+}
+
+func TestRateLimiterDefaultPrefixUsesLogicalPrefix(t *testing.T) {
+	redis := &mockRedis{result: []any{1, 1, 0, 100}}
+	limiter, err := New(redis, WithScriptSource("return {1,1,0,100}"))
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	_, err = limiter.Check(context.Background(), "user:1", TokenBucketPolicy{Capacity: 1, RefillRate: 1, TTLSec: 60}, 1)
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if got, want := redis.keys[0], "ratelimit:token_bucket:key:dXNlcjox"; got != want {
+		t.Fatalf("key = %q, want %q", got, want)
+	}
+}
+
+func TestRateLimiterNormalizesLegacyAlgorithmPrefix(t *testing.T) {
+	redis := &mockRedis{result: []any{1, 1, 0, 100}}
+	limiter, err := New(redis, WithScriptSource("return {1,1,0,100}"), WithKeyPrefix("ratelimit:token_bucket"))
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	_, err = limiter.Check(context.Background(), "user:1", TokenBucketPolicy{Capacity: 1, RefillRate: 1, TTLSec: 60}, 1)
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if got, want := redis.keys[0], "ratelimit:token_bucket:key:dXNlcjox"; got != want {
+		t.Fatalf("key = %q, want %q", got, want)
 	}
 }
 

@@ -34,7 +34,7 @@ type TokenBucketAlgorithm struct{}
 
 func (TokenBucketAlgorithm) Name() string { return "token_bucket" }
 
-func (TokenBucketAlgorithm) KeyPrefix() string { return "ratelimit:token_bucket" }
+func (TokenBucketAlgorithm) KeyPrefix() string { return "ratelimit" }
 
 func (TokenBucketAlgorithm) BuildRedisKeys(baseKey string) []string { return []string{baseKey} }
 

@@ -60,12 +60,17 @@ func loadScriptSource(scriptPath, scriptSource string) (string, error) {
 
 // Execute runs the loaded script against one Redis key.
 func (e *Executor) Execute(ctx context.Context, redisKey string, args []any) (any, error) {
+	return e.ExecuteKeys(ctx, []string{redisKey}, args)
+}
+
+// ExecuteKeys runs the loaded script against one or more Redis keys.
+func (e *Executor) ExecuteKeys(ctx context.Context, redisKeys []string, args []any) (any, error) {
 	sha, err := e.ensureScriptLoaded(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	raw, err := e.redis.EvalSHA(ctx, sha, []string{redisKey}, args...)
+	raw, err := e.redis.EvalSHA(ctx, sha, redisKeys, args...)
 	if err == nil {
 		return raw, nil
 	}
@@ -81,7 +86,7 @@ func (e *Executor) Execute(ctx context.Context, redisKey string, args []any) (an
 	if err != nil {
 		return nil, fmt.Errorf("reload after NOSCRIPT: %w", err)
 	}
-	raw, err = e.redis.EvalSHA(ctx, sha, []string{redisKey}, args...)
+	raw, err = e.redis.EvalSHA(ctx, sha, redisKeys, args...)
 	if err != nil {
 		return nil, fmt.Errorf("evalsha after NOSCRIPT reload: %w", err)
 	}
