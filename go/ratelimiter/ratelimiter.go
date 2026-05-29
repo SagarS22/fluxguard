@@ -34,9 +34,9 @@ func New(client RedisClient, opts ...Option) (*RateLimiter, error) {
 	if cfg.algorithm == nil {
 		return nil, fmt.Errorf("%w: nil algorithm", ErrUnknownAlgorithm)
 	}
-	keyPrefix := strings.Trim(cfg.algorithm.KeyPrefix(), ":")
+	keyPrefix := normalizeLogicalPrefix(cfg.algorithm.KeyPrefix(), cfg.algorithm.Name())
 	if cfg.keyPrefix != "" {
-		keyPrefix = cfg.keyPrefix
+		keyPrefix = normalizeLogicalPrefix(cfg.keyPrefix, cfg.algorithm.Name())
 	}
 	if keyPrefix == "" {
 		return nil, fmt.Errorf("key prefix must be non-empty")
@@ -55,6 +55,15 @@ func New(client RedisClient, opts ...Option) (*RateLimiter, error) {
 }
 
 // Check evaluates one rate-limit decision for key and policy.
+func normalizeLogicalPrefix(prefix, algorithmName string) string {
+	keyPrefix := strings.Trim(prefix, ":")
+	algorithmSuffix := ":" + algorithmName
+	if strings.HasSuffix(keyPrefix, algorithmSuffix) {
+		keyPrefix = strings.TrimSuffix(keyPrefix, algorithmSuffix)
+	}
+	return keyPrefix
+}
+
 func (r *RateLimiter) Check(ctx context.Context, key string, policy any, requested int64) (Decision, error) {
 	if r == nil {
 		return Decision{}, fmt.Errorf("rate limiter is nil")
@@ -77,7 +86,22 @@ func (r *RateLimiter) Check(ctx context.Context, key string, policy any, request
 		return Decision{}, fmt.Errorf("%w: %v", ErrInvalidPolicy, err)
 	}
 
-	raw, err := r.executor.Execute(ctx, r.keyPrefix+":"+key, args)
+	keyBuilder := newRedisKeyBuilder()
+	baseKey, err := keyBuilder.buildBaseKey(r.keyPrefix, r.algorithm.Name(), defaultRedisKeyDimension, key, r.algorithm.UseRedisHashTag())
+	if err != nil {
+		return Decision{}, fmt.Errorf("%w: %v", ErrScriptExecution, err)
+	}
+	redisKeys := r.algorithm.BuildRedisKeys(baseKey)
+	if len(redisKeys) == 0 {
+		return Decision{}, fmt.Errorf("%w: algorithm returned no redis keys", ErrScriptExecution)
+	}
+	for _, redisKey := range redisKeys {
+		if err := keyBuilder.validateKeyLength(redisKey); err != nil {
+			return Decision{}, fmt.Errorf("%w: %v", ErrScriptExecution, err)
+		}
+	}
+
+	raw, err := r.executor.ExecuteKeys(ctx, redisKeys, args)
 	if err != nil {
 		return Decision{}, fmt.Errorf("%w: %v", ErrScriptExecution, err)
 	}
