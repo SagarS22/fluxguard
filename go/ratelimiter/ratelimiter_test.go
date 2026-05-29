@@ -37,6 +37,9 @@ func TestRateLimiterCheck(t *testing.T) {
 	if !decision.Allowed || decision.Remaining != 4 {
 		t.Fatalf("decision = %#v", decision)
 	}
+	if len(redis.keys) != 1 {
+		t.Fatalf("keys = %v, want one key", redis.keys)
+	}
 	if got, want := redis.keys[0], "test:token_bucket:key:dXNlcjox"; got != want {
 		t.Fatalf("key = %q, want %q", got, want)
 	}
@@ -78,6 +81,22 @@ func TestRateLimiterNormalizesLegacyAlgorithmPrefix(t *testing.T) {
 	}
 }
 
+func TestRateLimiterSlidingWindowPassesTwoHashTaggedKeys(t *testing.T) {
+	redis := &mockRedis{result: []any{1, 4, 0, 100}}
+	limiter, err := CreateRateLimiter(redis, "sliding_window", WithScriptSource("return {1,4,0,100}"))
+	if err != nil {
+		t.Fatalf("CreateRateLimiter() error = %v", err)
+	}
+	_, err = limiter.Check(context.Background(), "user:1", SlidingWindowPolicy{Capacity: 5, WindowSec: 60, TTLSec: 120}, 1)
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	want := []string{"ratelimit:sliding_window:key:{dXNlcjox}", "ratelimit:sliding_window:key:{dXNlcjox}:seq"}
+	if !equalStrings(redis.keys, want) {
+		t.Fatalf("keys = %v, want %v", redis.keys, want)
+	}
+}
+
 func TestRateLimiterInvalidPolicy(t *testing.T) {
 	limiter, err := New(&mockRedis{}, WithScriptSource("return {1,1,0,0}"))
 	if err != nil {
@@ -101,4 +120,23 @@ func TestCreateRateLimiterByName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateRateLimiter() error = %v", err)
 	}
+}
+
+func TestCreateRateLimiterBySlidingWindowName(t *testing.T) {
+	_, err := CreateRateLimiter(&mockRedis{}, "sliding_window", WithScriptSource("return {1,1,0,0}"))
+	if err != nil {
+		t.Fatalf("CreateRateLimiter() error = %v", err)
+	}
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

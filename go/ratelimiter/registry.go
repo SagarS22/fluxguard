@@ -20,6 +20,7 @@ type AlgorithmRegistry struct {
 func NewAlgorithmRegistry() *AlgorithmRegistry {
 	r := &AlgorithmRegistry{factories: make(map[string]AlgorithmFactory)}
 	r.Register("token_bucket", func() Algorithm { return algorithms.TokenBucketAlgorithm{} })
+	r.Register("sliding_window", func() Algorithm { return algorithms.SlidingWindowAlgorithm{} })
 	return r
 }
 
