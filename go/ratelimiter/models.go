@@ -13,3 +13,9 @@ type TokenBucketPolicy = algorithms.TokenBucketPolicy
 
 // TokenBucketAlgorithm is the built-in token-bucket algorithm implementation.
 type TokenBucketAlgorithm = algorithms.TokenBucketAlgorithm
+
+// SlidingWindowPolicy configures the built-in sliding-window algorithm.
+type SlidingWindowPolicy = algorithms.SlidingWindowPolicy
+
+// SlidingWindowAlgorithm is the built-in sliding-window algorithm implementation.
+type SlidingWindowAlgorithm = algorithms.SlidingWindowAlgorithm

@@ -26,10 +26,30 @@ type RedisClient interface {
 
 Use a small adapter for your Redis library if needed.
 
+## Sliding window
+
+```go
+limiter, err := ratelimiter.CreateRateLimiter(redisClient, "sliding_window")
+if err != nil { panic(err) }
+
+decision, err := limiter.Check(ctx, "user:123", ratelimiter.SlidingWindowPolicy{
+    Capacity: 100,
+    WindowSec: 60,
+    TTLSec: 120,
+}, 1)
+```
+
+The sliding-window algorithm uses two Redis keys: the request log key and a sequence key. The SDK wraps the encoded user key in a Redis Cluster hash tag so both keys share a hash slot, for example:
+
+```text
+ratelimit:sliding_window:key:{dXNlcjoxMjM}
+ratelimit:sliding_window:key:{dXNlcjoxMjM}:seq
+```
+
 ## Options
 
 - `WithAlgorithm(algorithm)` selects a custom algorithm.
-- `WithKeyPrefix(prefix)` overrides the Redis key prefix.
+- `WithKeyPrefix(prefix)` overrides the logical Redis key prefix.
 - `WithScriptPath(path)` loads a Lua script from a custom path.
 - `WithScriptSource(source)` supplies Lua source directly, useful for tests.
 

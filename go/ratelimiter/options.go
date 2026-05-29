@@ -23,7 +23,8 @@ func WithAlgorithm(algorithm Algorithm) Option {
 	}
 }
 
-// WithKeyPrefix overrides the algorithm default Redis key prefix.
+// WithKeyPrefix overrides the default logical Redis key prefix.
+// Legacy values in the form "{prefix}:{algorithm}" are normalized by New.
 func WithKeyPrefix(prefix string) Option {
 	return func(c *config) error {
 		c.keyPrefix = strings.Trim(prefix, ":")
